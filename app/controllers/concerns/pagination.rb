@@ -3,10 +3,6 @@ module Pagination
 
   DEFAULT_PER_PAGE = 10
 
-  included do
-    helper_method :current_page, :per_page
-  end
-
 
 
   def current_page

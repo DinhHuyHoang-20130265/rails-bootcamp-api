@@ -1,16 +1,21 @@
 class UserForm < Reform::Form
   property :username
   property :display_name
-  property :password, empty: true # case when user update but not change password
-  property :password_confirmation, virtual: true # Not persisted in the database
-  property :current_password, virtual: true # For profile updates
+  property :email
+  property :password, empty: true
+  property :password_confirmation, virtual: true
+  property :current_password, virtual: true
 
   validates :display_name, presence: true
   validates :username, presence: true, length: { minimum: 3 }
+  validates :email, format: { with: URI::MailTo::EMAIL_REGEXP },
+            allow_blank: true
   validates :password, presence: true,
             format: {
               with: /\A(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,}\z/,
-              message: "must be at least 8 characters, include uppercase, lowercase, and numbers, and contain only letters and digits"
+              message: "must be at least 8 characters,
+                        include uppercase, lowercase, and numbers,
+                        and contain only letters and digits"
             },
             if: :password_required?
   validates :password_confirmation, presence: true, if: :password_required?
@@ -22,7 +27,10 @@ class UserForm < Reform::Form
   def save
     if password.blank?
       # If password is blank, update only non-password fields
-      model.assign_attributes(username: username, display_name: display_name)
+      model.assign_attributes(username: username,
+                              display_name: display_name,
+                              email: email
+      )
       model.save
     else
       # If password is present, use normal save

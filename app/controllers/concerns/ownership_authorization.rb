@@ -11,9 +11,9 @@ module OwnershipAuthorization
         record.model.user_id
       end
 
-    # Redirect unless the current user is the owner
+    # Allow if the current user is the owner
     return if owner_id == current_user&.id
 
-    redirect_to tweets_path, alert: "Not authorized."
+    render json: { error: "Not authorized" }, status: :forbidden
   end
 end

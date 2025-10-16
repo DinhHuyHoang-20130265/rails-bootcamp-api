@@ -1,0 +1,26 @@
+development:
+  adapter: postgresql
+  encoding: unicode
+  database: bootcamp-api
+  pool: 5
+  username: postgres
+  password: 123456
+  host: localhost
+
+test:
+  adapter: postgresql
+  encoding: unicode
+  database: bootcamp-api
+  pool: 5
+  username: postgres
+  password: 123456
+  host: localhost
+
+production:
+  adapter: postgresql
+  encoding: unicode
+  database: bootcamp-api
+  pool: 5
+  username: postgres
+  password: <%= ENV['MYAPP_DATABASE_PASSWORD'] %> # Using environment variable
+  host: <%= ENV['MYAPP_DATABASE_HOST'] %>

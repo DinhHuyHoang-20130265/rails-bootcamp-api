@@ -1,111 +1,79 @@
 class TweetsController < ApplicationController
   include Pagination
 
-  before_action :authenticate_user!,
-                only: [ :new, :create, :edit, :update, :destroy, :load_more ]
-  before_action :set_tweet, only: %i[ show edit update destroy ]
+  before_action :authenticate_user!
 
-  # GET /tweets or /tweets.json
+
+
   def index
-    @form = TweetForm.new(current_user.tweets.build) if user_signed_in?
-
     base_scope = Tweet.top_level
     base_scope = apply_sorting(base_scope)
     @tweets, @has_more_tweets = paginate(base_scope)
-    @tweets = @tweets.decorate
 
-    respond_to do |format|
-      format.html
-      format.turbo_stream
-    end
+    render json: {
+      data: ActiveModelSerializers::SerializableResource.new(
+        @tweets, each_serializer: TweetSerializer
+      ).as_json,
+      meta: {
+        has_more: @has_more_tweets,
+        page: current_page,
+        per_page: per_page
+      }
+    }
   end
 
   def show
-  end
+    @tweet = Tweet.find(params[:id]) rescue nil
 
-  def load_more
-    base_scope = Tweet.top_level
-    base_scope = apply_sorting(base_scope)
-    @tweets, @has_more_tweets = paginate(base_scope)
-    @tweets = @tweets.decorate
-
-    respond_to do |format|
-      format.turbo_stream
-    end
-  end
-
-  # GET /tweets/new
-  def new
-    # Build a non-persisted tweet for the form; associate only if signed in
-    tweet = user_signed_in? ? current_user.tweets.build : Tweet.new
-    @form = TweetForm.new(tweet)
-  end
-
-  # GET /tweets/1/edit
-  def edit
-    # @tweet = Tweet.find(params[:id])
-    @form = TweetForm.new(Tweet.find(params[:id]))
-
-    respond_to do |format|
-      format.turbo_stream
-      format.html
-    end
-  end
-
-  # POST /tweets or /tweets.json
-  def create
-    # @tweet = current_user.tweets.build(tweet_params)
-    @form = TweetForm.new(current_user.tweets.build)
-
-    respond_to do |format|
-      if @form.validate(tweet_params) && @form.save
-        format.turbo_stream
-        format.html {
-          redirect_to tweets_path, notice: "Tweet created successfully."
-        }
-      else
-        format.turbo_stream
-        format.html { render :'tweets/index' }
-      end
-    end
-  end
-
-  # PATCH/PUT /tweets/1 or /tweets/1.json
-  def update
-    # @tweet = Tweet.find(params[:id])
-    @form = TweetForm.new(Tweet.find(params[:id]))
-
-    respond_to do |format|
-      if @form.validate(tweet_params) && @form.save
-        format.turbo_stream
-        format.html {
-          redirect_to tweets_path, notice: "Tweet updated successfully."
-        }
-      else
-        format.turbo_stream
-        format.html { render :'tweets/index' }
-      end
-    end
-  end
-
-  # DELETE /tweets/1 or /tweets/1.jsons
-  def destroy
-    @form.model.destroy!
-
-    respond_to do |format|
-      format.turbo_stream
-      format.html {
-        redirect_to tweets_path, notice: "Tweet was successfully destroyed."
+    if @tweet.nil?
+      render json: { error: "Tweet not found" }, status: :not_found
+    else
+      render json: {
+        tweet: ActiveModelSerializers::SerializableResource.new(
+          @tweet, serializer: TweetSerializer
+        ).as_json
       }
     end
   end
 
-  private
+  def create
+    @form = TweetForm.new(current_user.tweets.build)
 
-  # Use callbacks to share common setup or constraints between actions.
-  def set_tweet
-    @form = TweetForm.new(Tweet.find(params[:id]))
+    if @form.validate(tweet_params) && @form.save
+      render json: {
+        tweet: ActiveModelSerializers::SerializableResource.new(
+          @form.model, serializer: TweetSerializer
+        ).as_json
+      }, status: :created
+    else
+      render json: { errors: @form.errors.messages },
+             status: :unprocessable_entity
+    end
   end
+
+  def update
+    @form = TweetForm.new(Tweet.find(params[:id]))
+
+    if @form.validate(tweet_params) && @form.save
+      render json: {
+        tweet: ActiveModelSerializers::SerializableResource.new(
+          @form.model, serializer: TweetSerializer
+        ).as_json
+      }, status: :ok
+    else
+      render json: { errors: @form.errors.messages },
+             status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    @form = TweetForm.new(Tweet.find(params[:id]))
+    @form.model.destroy!
+
+    render json: { message: "Tweet deleted successfully" }, status: :ok
+  end
+
+  private
 
   # Only allow a list of trusted parameters through.
   def tweet_params
