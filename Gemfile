@@ -2,7 +2,7 @@ gem "active_model_serializers", "~> 0.10.14"
 source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
-gem "rails", "~> 8.0.3"
+gem "rails", "~> 8.1.0"
 # Use postgresql as the database for Active Record
 gem "pg", "~> 1.1"
 # Use the Puma web server [https://github.com/puma/puma]
