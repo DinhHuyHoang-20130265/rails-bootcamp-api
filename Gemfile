@@ -1,4 +1,4 @@
-gem "active_model_serializers", "~> 0.10.14"
+gem "active_model_serializers", "~> 0.10.16"
 source "https://rubygems.org"
 
 # Bundle edge Rails instead: gem "rails", github: "rails/rails", branch: "main"
